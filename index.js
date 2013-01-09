@@ -8,7 +8,7 @@ exports.async_trace_limit = 10;
 
 exports.format_stack_frame = function(frame) {
   if (frame.getFileName() === exports.empty_frame) { return exports.empty_frame; }
-  
+
   var format_location = function(frame) {
     if (frame.isNative()) { return 'native'; }
     if (frame.isEval()) { return 'eval at ' + frame.getEvalOrigin(); }
@@ -19,7 +19,7 @@ exports.format_stack_frame = function(frame) {
   };
   var format_method = function(frame) {
     var function_name = frame.getFunctionName();
-    
+
     if (!(frame.isToplevel() || frame.isConstructor())) {
       var method = frame.getMethodName();
       return frame.getTypeName() + '.' + (!function_name ? method || '<anonymous>' : function_name + (method && method !== function_name ? ' [as ' + method + ']' : ''));
@@ -28,7 +28,7 @@ exports.format_stack_frame = function(frame) {
     if (function_name) { return function_name; }
     return null;
   };
-  
+
   var method = format_method(frame)
     , location = format_location(frame);
   return '    at ' + (!method ? location : method + ' (' + location + ')');
@@ -61,11 +61,11 @@ Error.prepareStackTrace = function(error, structured_stack_trace) {
   error.__cached_trace__ = structured_stack_trace.filter(function(f) {
     return f.getFileName() !== filename;
   });
-  
+
   if (!error.__previous__ && current_trace_error) {
     error.__previous__ = current_trace_error;
   }
-  
+
   ++in_prepare;
   var previous_trace = error.__previous__ ? error.__previous__.stack : null;
   --in_prepare;
@@ -80,7 +80,7 @@ Error.prepareStackTrace = function(error, structured_stack_trace) {
 
 var limit_frames = function(stack) {
   if (exports.async_trace_limit <= 0 || (stack && stack.__trace_count__ < exports.async_trace_limit)) { return; }
-  
+
   var count = 1
     , previous = stack;
   while (previous) {
@@ -100,7 +100,7 @@ var wrap_callback = function(callback, location) {
   trace_error.__trace_count__ = current_trace_error ? current_trace_error.__trace_count__ + 1 : 1;
 
   limit_frames(trace_error);
-  
+
   var new_callback = function() {
     current_trace_error = trace_error;
     try {
@@ -113,12 +113,10 @@ var wrap_callback = function(callback, location) {
       current_trace_error = null;
     }
   };
-  
+
   new_callback.__original_callback__ = callback;
   return new_callback;
 };
-
-
 
 var _on = EventEmitter.prototype.on
   , _addListener = EventEmitter.prototype.addListener
@@ -145,7 +143,7 @@ EventEmitter.prototype.removeListener = function(event, callback) {
              (val.__original_callback__ && val.__original_callback__.listener && val.__original_callback__.listener.__original_callback__ === callback) ||
              (val.listener && val.listener.__original_callback__ === callback);
     };
-    
+
     if (!_this._events || !_this._events[event]) { return null; }
     if (Array.isArray(_this._events[event])) {
       var x, listeners = _this._events[event] || [];
@@ -159,7 +157,7 @@ EventEmitter.prototype.removeListener = function(event, callback) {
     }
     return null;
   };
-    
+
   var listener = find_listener(callback);
   if (!listener || typeof(listener) !== 'function') { return this; }
   return _removeListener.call(this, event, listener);
