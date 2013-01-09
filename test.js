@@ -1,7 +1,7 @@
 // These tests should be run one at a time.  Comment the others out before running
 
 var fs = require('fs')
-  , longjohn = require('./index');
+  , longjohn = require('./index').activate();
 
 
 // Throw immediate error
