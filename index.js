@@ -3,6 +3,17 @@ var EventEmitter = require('events').EventEmitter
   , current_trace_error = null
   , in_prepare = 0;
 
+//save Node function
+var _on = EventEmitter.prototype.on
+  , _addListener = EventEmitter.prototype.addListener
+  , _once = EventEmitter.prototype.once
+  , _removeListener = EventEmitter.prototype.removeListener
+  , _nextTick = process.nextTick
+  , _setTimeout = global.setTimeout
+  , _setInterval = global.setInterval
+  , _prepareStackTrace = Error.prepareStackTrace;
+
+
 exports.empty_frame = '---------------------------------------------';
 exports.async_trace_limit = 10;
 
@@ -57,7 +68,7 @@ var create_callsite = function(location) {
   });
 };
 
-Error.prepareStackTrace = function(error, structured_stack_trace) {
+function prepareStackTrace (error, structured_stack_trace) {
   error.__cached_trace__ = structured_stack_trace.filter(function(f) {
     return f.getFileName() !== filename;
   });
@@ -76,7 +87,7 @@ Error.prepareStackTrace = function(error, structured_stack_trace) {
 
   if (in_prepare > 0) { return error.__cached_trace__; }
   return exports.format_stack(error, error.__cached_trace__);
-};
+}
 
 var limit_frames = function(stack) {
   if (exports.async_trace_limit <= 0 || (stack && stack.__trace_count__ < exports.async_trace_limit)) { return; }
@@ -118,24 +129,19 @@ var wrap_callback = function(callback, location) {
   return new_callback;
 };
 
-var _on = EventEmitter.prototype.on
-  , _addListener = EventEmitter.prototype.addListener
-  , _once = EventEmitter.prototype.once
-  , _removeListener = EventEmitter.prototype.removeListener;
-
-EventEmitter.prototype.addListener = function(event, callback) {
+function addListener(event, callback) {
   return _addListener.call(this, event, wrap_callback(callback, 'EventEmitter.addListener'));
-};
+}
 
-EventEmitter.prototype.on = function(event, callback) {
+function on(event, callback) {
   return _on.call(this, event, wrap_callback(callback, 'EventEmitter.on'));
-};
+}
 
-EventEmitter.prototype.once = function(event, callback) {
+function once(event, callback) {
   return _once.call(this, event, wrap_callback(callback, 'EventEmitter.once'));
-};
+}
 
-EventEmitter.prototype.removeListener = function(event, callback) {
+function removeListener(event, callback) {
   var _this = this;
   var find_listener = function(callback) {
     var is_callback = function(val) {
@@ -163,27 +169,46 @@ EventEmitter.prototype.removeListener = function(event, callback) {
   return _removeListener.call(this, event, listener);
 }
 
-
-
-var _nextTick = process.nextTick;
-
-process.nextTick = function(callback) {
+function nextTick(callback) {
   return _nextTick.call(this, wrap_callback(callback, 'process.nextTick'));
-};
+}
 
-
-
-var _setTimeout = global.setTimeout
-  , _setInterval = global.setInterval;
-
-global.setTimeout = function(callback, interval) {
+function setTimeoutLongTrace (callback, interval) {
   var args = Array.prototype.slice.call(arguments);
   args[0] = wrap_callback(callback, 'process.nextTick');
   return _setTimeout.apply(this, args);
-};
+}
 
-global.setInterval = function(callback, interval) {
+function setIntervalLongTrace (callback, interval) {
   var args = Array.prototype.slice.call(arguments);
   args[0] = wrap_callback(callback, 'process.nextTick');
   return _setInterval.apply(this, args);
+}
+
+exports.activate = function activateLongStackTrace () {
+  Error.prepareStackTrace = prepareStackTrace;
+
+  EventEmitter.prototype.on = on;
+  EventEmitter.prototype.addListener = addListener;
+  EventEmitter.prototype.once = once;
+  EventEmitter.prototype.removeListener = removeListener;
+
+  process.nextTick = nextTick;
+
+  global.setInterval = setTimeoutLongTrace;
+  global.setTimeout = setIntervalLongTrace;
+};
+
+exports.deactivate = function disableLongStackTrace () {
+  Error.prepareStackTrace = _prepareStackTrace;
+
+  EventEmitter.prototype.on = _on;
+  EventEmitter.prototype.addListener = _addListener;
+  EventEmitter.prototype.once = _once;
+  EventEmitter.prototype.removeListener = _removeListener;
+
+  process.nextTick = _nextTick;
+
+  global.setInterval = _setInterval;
+  global.setTimeout = _setTimeout;
 };

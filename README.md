@@ -23,7 +23,7 @@ $ npm install longjohn
 To use longjohn, require it in your code (probably in some initialization code).  That's all!
 
 ```javascript
-require('longjohn');
+require('longjohn').activate();
 
 // ... your code
 ```
@@ -41,4 +41,11 @@ longjohn.async_trace_limit = -1;  // unlimited
 
 ```javascript
 longjohn.empty_frame = 'ASYNC CALLBACK';  // defaults to '---------------------------------------------'
+```
+
+### switch on/off the module
+```javascript
+longjohn.activate();
+
+longjohn.deactivate();
 ```
