@@ -179,9 +179,13 @@ var _setTimeout = global.setTimeout
   , _setInterval = global.setInterval;
 
 global.setTimeout = function(callback, interval) {
-  return _setTimeout.call(this, wrap_callback(callback, 'process.nextTick'), interval);
+  var args = Array.prototype.slice.call(arguments);
+  args[0] = wrap_callback(callback, 'process.nextTick');
+  return _setTimeout.apply(this, args);
 };
 
 global.setInterval = function(callback, interval) {
-  return _setInterval.call(this, wrap_callback(callback, 'process.nextTick'), interval);
+  var args = Array.prototype.slice.call(arguments);
+  args[0] = wrap_callback(callback, 'process.nextTick');
+  return _setInterval.apply(this, args);
 };
