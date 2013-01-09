@@ -4,6 +4,8 @@ var fs = require('fs')
   , longjohn = require('./index').activate();
 
 
+console.log("Tests are not automatic, they have to be passed one by one");
+
 // Throw immediate error
 throw new Error('foo');
 
